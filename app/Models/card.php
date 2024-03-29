@@ -12,6 +12,7 @@ class card extends Model
 
     protected $table = 'cards';
     protected $fillable = [
+        'user_id',
         'name',
         'company',
         'title',

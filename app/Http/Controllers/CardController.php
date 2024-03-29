@@ -30,6 +30,94 @@ class CardController extends Controller
 
     public function store(Request $request)
     {
+        $validator = Validator::make($request->all(), [
+            'name' => 'required',
+            'company' => 'required',
+            'title' => 'required',
+            'coordinates' => 'required'
+        ]);
+        
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 422,
+                'error_message' => $validator->messages()
+            ], 422);
+        }
+        
+        $cards = Card::create([
+            'name' => $request->name,
+            'company' => $request->company,
+            'title' => $request->title,
+            'coordinates' => $request->coordinates,
+            'user_id' => auth()->user()->id
+        ]);
+
+        if ($cards) {
+            return response()->json([
+                'status' => 200,
+                'cards' => $cards,
+            ], 200);
+        } else {
+            return response()->json([
+                'status' => 500,
+                'error_message' => "Error",
+            ], 500);
+        }
+    }
+
+    public function update(Request $request, $cardId)
+    {
+        $card = Card::find($cardId);
+        
+        if (!$card) { 
+            return response()->json([
+                'status' => 404,
+                'message' => 'Error, Not Found!'
+            ], 404);
+        }
+        
+        if (auth()->user()->id !== $card->user_id) {
+            return response()->json([
+                'status' => 403,
+                'message' => 'Unauthorized, You are not allowed to update this card!'
+            ], 403);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'name' => 'string',
+            'company' => 'string',
+            'title' => 'string',
+            'coordinates' => 'string',
+        ]);
+
+        if ($validator->fails()) { 
+            return response()->json([
+                'status' => 422,
+                'error_message' => $validator->messages()
+            ], 422);
+        }
+
+        $card->fill($request->only(['name', 'company', 'title', 'coordinates']));
+        $card->save();
+
+        return response()->json([
+            'status' => 200,
+            'message' => "Card Updated Successfully"
+        ], 200);
+    }
+
+
+    public function find(Request $request, $card)
+    {
+        $search = card::find($card);
+        if($search == NULL){
+            return response()->json([
+                "status" => 404,
+                "error_message" => "Card id not found"
+            ], 404);
+        }else{
+            return $search;
+        }
         $validator = Validator::make($request->all(),[
             'name' => 'required',
             'company' => 'required',
@@ -44,7 +132,8 @@ class CardController extends Controller
             ], 422);
         }else
         {
-            $cards = card::create([
+            $cards = card::find($card);
+            $cards->update([
                 'name' => $request->name,
                 'company' => $request->company,
                 'title' => $request->title,
@@ -62,28 +151,6 @@ class CardController extends Controller
                 'status' => 510,
                 'error_message'=> "error",
             ], 500);
-        }
-    }
-
-    public function update($card)
-    {
-        $update = card::find($card);
-        return 'coming soon';
-    }
-
-    public function find($card)
-    {
-        // if(!$card){
-        //     return "huh";
-        // }
-        $search = card::find($card);
-        if($search == NULL){
-            return response()->json([
-                "status" => 404,
-                "error_message" => "Card id not found"
-            ], 404);
-        }else{
-            return $search;
         }
     }
 
