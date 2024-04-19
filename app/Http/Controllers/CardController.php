@@ -7,6 +7,7 @@ use App\Http\Requests\UpdatecardRequest;
 use App\Models\card;
 use Illuminate\Auth\Events\Validated;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
 class CardController extends Controller
@@ -16,7 +17,7 @@ class CardController extends Controller
         $cards = card::all();
         if($cards->count() > 0){
             return response()->json([
-                'ye' => $cards->count(),
+                'cards count' => $cards->count(),
                 'status' => 200,
                 'cards' => $cards
             ], 200);
@@ -68,41 +69,33 @@ class CardController extends Controller
     public function update(Request $request, $cardId)
     {
         $card = Card::find($cardId);
-        
-        if (!$card) { 
+        if (!$card) {
             return response()->json([
-                'status' => 404,
-                'message' => 'Error, Not Found!'
+                "status" => 404,
+                "error_message" => "Card not found"
             ], 404);
-        }
-        
-        if (auth()->user()->id !== $card->user_id) {
-            return response()->json([
-                'status' => 403,
-                'message' => 'Unauthorized, You are not allowed to update this card!'
-            ], 403);
         }
 
         $validator = Validator::make($request->all(), [
-            'name' => 'string',
-            'company' => 'string',
-            'title' => 'string',
-            'coordinates' => 'string',
+            'name' => 'sometimes|required',
+            'company' => 'sometimes|required',
+            'title' => 'sometimes|required',
+            'coordinates' => 'sometimes|required'
         ]);
 
-        if ($validator->fails()) { 
+        if ($validator->fails()) {
             return response()->json([
                 'status' => 422,
                 'error_message' => $validator->messages()
             ], 422);
         }
 
-        $card->fill($request->only(['name', 'company', 'title', 'coordinates']));
+        $card->fill($request->all());
         $card->save();
 
         return response()->json([
             'status' => 200,
-            'message' => "Card Updated Successfully"
+            'card' => $card,
         ], 200);
     }
 
